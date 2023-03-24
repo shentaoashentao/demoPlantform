@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Face Detection</title>
+    <script src="https://cdn.jsdelivr.net/npm/tracking/build/tracking.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tracking/build/data/face-detection.js"></script>
+    <!--<script src="D:\tracking.js\tracking.js"></script>  -->
+    <style>
+        video {
+            width: 640px;
+            height: 480px;
+        }
+    </style>
+
+
+</head>
+<body>
+<video id="video" autoplay></video>
+<canvas id="canvas"></canvas>
+
+
+<script>
+
+    navigator.mediaDevices.getUserMedia({video: true})
+        .then(function(stream) {
+            var video = document.getElementById("video");
+            video.srcObject = stream;
+        })
+        .catch(function(err) {
+            console.log(err);
+        });
+
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+
+    function detectFace() {
+        var video = document.getElementById("video");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        var image = new Image();
+        image.src = canvas.toDataURL();
+
+        var tracker = new tracking.ObjectTracker("face");
+        tracker.setInitialScale(4);
+        tracker.setStepSize(2);
+        tracker.setEdgesDensity(0.1);
+        tracker.setMinDimension(20);
+
+        tracking.track(image, tracker);
+
+        tracker.on("track", function(event) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            event.data.forEach(function(rect) {
+                context.strokeStyle = "#ff0000";
+                context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+                context.font = "16px Arial";
+                context.fillStyle = "#ff0000";
+                context.fillText("Confidence: " + rect.confidence, rect.x, rect.y - 5);
+            });
+        });
+
+        requestAnimationFrame(detectFace);
+    }
+
+    detectFace();
+</script>
+</body>
+</html>
